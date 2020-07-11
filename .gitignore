@@ -1,0 +1,7 @@
+#Project Configurations
+*.lps
+
+#Build Process
+backup 
+src/backup
+*.dbg*

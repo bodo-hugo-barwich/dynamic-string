@@ -15,7 +15,7 @@ type
 // The TPLString Class Declaration
 
 
-  TPLString = class
+  TDynString = class
   protected
     sdata: String;
     ilength: Cardinal;
@@ -34,6 +34,7 @@ type
     constructor Create(const ssource: String); overload;
     procedure AddString(const ssource: String);
     procedure SetString(const ssource: String);
+    procedure AddChar(const schar: Char);
     property Position: Cardinal read GetPosition write SetPosition;
     property Data: String read sdata;
     property StartPointer: PChar read pcstart;
@@ -43,7 +44,7 @@ type
 
 implementation
 //==============================================================================
-// The TPLString Class Implementation
+// The TDynString Class Implementation
 
 
 
@@ -52,12 +53,12 @@ implementation
 //Constructors
 
 
-constructor TPLString.Create; overload;
+constructor TDynString.Create; overload;
 begin
   Self.Init('');
 end;
 
-constructor TPLString.Create(const ssource: String); overload;
+constructor TDynString.Create(const ssource: String); overload;
 begin
   Self.Init(ssource);
 end;
@@ -68,13 +69,13 @@ end;
 //Administration Methods
 
 
-procedure TPLString.Init(const ssource: String);
+procedure TDynString.Init(const ssource: String);
 begin
   Self.sdata := ssource;
   Self.ilength := Length(ssource);
   Self.icapacity := -1;
 
-  Self.ismallgrowfactor := 4;
+  Self.ismallgrowfactor := 2;
   Self.ibiggrowfactor := 8192;
 
   Self.pcstart := Nil;
@@ -84,7 +85,7 @@ begin
   Self.Grow(Self.ilength);
 end;
 
-procedure TPLString.SetPosition(iposition: Cardinal);
+procedure TDynString.SetPosition(iposition: Cardinal);
 begin
   Self.pcposition := Self.pcstart + iposition;
 
@@ -93,7 +94,7 @@ begin
 
 end;
 
-procedure TPLString.Grow(iminimumcapacity: Integer = -1);
+procedure TDynString.Grow(iminimumcapacity: Integer = -1);
 var
   ips: Cardinal;
 begin
@@ -143,33 +144,35 @@ begin
   Self.pcposition := Self.pcstart + ips;
 end;
 
-procedure TPLString.AddString(const ssource: String);
+procedure TDynString.AddString(const ssource: String);
 var
   psrc: PChar;
-  isrclng: Cardinal;
+  isrclng, idtalng: Cardinal;
 begin
   psrc := PChar(ssource);
   isrclng := Length(ssource);
+  idtalng := Self.ilength + isrclng;
 
-  if Self.ilength + isrclng >= Self.icapacity then
+  if idtalng >= Self.icapacity then
   begin
-    if isrclng < (Self.icapacity * Self.ismallgrowfactor) then
+    if idtalng < (Self.icapacity * Self.ismallgrowfactor) then
       //Normal Growth
       Self.Grow
     else
       //Fast Growth
       Self.Grow(Self.ilength + isrclng);
 
-  end;  //if Self.ilength + isrclng >= Self.icapacity then
+  end;  //if idtalng >= Self.icapacity then
 
   //Copy the Source Data into the Buffer
   Move(psrc^, Self.pcposition^, isrclng);
 
   inc(Self.pcposition, isrclng);
 
+  Self.ilength := idtalng;
 end;
 
-procedure TPLString.SetString(const ssource: String);
+procedure TDynString.SetString(const ssource: String);
 begin
   Self.sdata := ssource;
   Self.ilength := Length(ssource);
@@ -182,13 +185,24 @@ begin
   Self.Grow(Self.ilength);
 end;
 
+procedure TDynString.AddChar(const schar: Char);
+begin
+  if Self.ilength + 1 >= Self.icapacity then
+    //Normal Growth
+    Self.Grow
 
+  //Set the Character at the Buffer Position
+  Self.pcposition^ := schar;
+
+  inc(Self.pcposition);
+  inc(Self.ilength);
+end;
 
 
 //----------------------------------------------------------------------------
 //Consultation Methods
 
-function TPLString.GetPosition: Cardinal;
+function TDynString.GetPosition: Cardinal;
 begin
   Result := Self.pcposition - Self.pcstart;
 end;

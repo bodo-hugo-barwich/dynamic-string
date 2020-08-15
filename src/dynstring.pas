@@ -12,7 +12,7 @@ uses
 
 type
 //==============================================================================
-// The TPLString Class Declaration
+// The TDynString Class Declaration
 
 
   TDynString = class
@@ -28,6 +28,8 @@ type
     procedure Init(const ssource: String);
     procedure Grow(iminimumcapacity: Integer = -1);
     procedure SetPosition(iposition: Cardinal);
+    procedure SetDataLength(idatalength: Cardinal);
+    procedure SetDataCapacity(idatacapacity: Cardinal);
     function GetPosition: Cardinal;
   public
     constructor Create; overload;
@@ -35,10 +37,13 @@ type
     procedure AddString(const ssource: String);
     procedure SetString(const ssource: String);
     procedure AddChar(const schar: Char);
-    property Position: Cardinal read GetPosition write SetPosition;
-    property Data: String read sdata;
+    procedure AddByte(const ibyte: Byte);
+    property Data: String read sdata write SetString;
     property StartPointer: PChar read pcstart;
     property EndPointer: PChar read pcend;
+    property Position: Cardinal read GetPosition write SetPosition;
+    property Length: Cardinal read ilength write SetDataLength;
+    property Capacity: Cardinal read icapacity write SetDataCapacity;
   end;
 
 
@@ -92,6 +97,50 @@ begin
   if Self.pcposition > Self.pcend then
     Self.pcposition := Self.pcend;
 
+end;
+
+procedure TDynString.SetDataLength(idatalength: Cardinal);
+var
+  ifllcnt: Cardinal;
+begin
+  if istringlength > Self.icapacity then
+    Self.Grow(istringlength);
+
+  if istringlength > Self.ilength then
+  begin
+    ifllcnt := istringlength - Self.ilength;
+  end;
+end;
+
+procedure TDynString.SetDataCapacity(idatacapacity: Cardinal);
+var
+  ips: Cardinal;
+begin
+  if istringcapacity > Self.icapacity then
+    Self.Grow(istringcapacity)
+  else  //The New Capacity is fewer than the Actual Capacity
+  begin
+    if Self.pcposition <> Nil then
+      ips := Self.pcposition - Self.pcstart
+    else
+      ips := Self.ilength;
+
+    if ips > istringcapacity then
+    begin
+      ips := istringcapacity;
+      Self.ilength := istringcapacity;
+    end;
+
+    //Set the strict Capacity
+    Self.icapacity := istringcapacity;
+
+    //Truncate the String
+    SetLength(Self.sdata, Self.icapacity);
+
+    Self.pcstart := PChar(Self.sdata);
+    Self.pcend := Self.pcstart + Self.icapacity;
+    Self.pcposition := Self.pcstart + ips;
+  end;  //if istringcapacity > Self.icapacity then
 end;
 
 procedure TDynString.Grow(iminimumcapacity: Integer = -1);
@@ -197,6 +246,20 @@ begin
   inc(Self.pcposition);
   inc(Self.ilength);
 end;
+
+procedure TDynString.AddByte(const ibyte: Byte);
+begin
+  if Self.ilength + 1 >= Self.icapacity then
+    //Normal Growth
+    Self.Grow
+
+  //Set the Character of the Byte at the Buffer Position
+  Self.pcposition^ := chr(ibyte);
+
+  inc(Self.pcposition);
+  inc(Self.ilength);
+end;
+
 
 
 //----------------------------------------------------------------------------

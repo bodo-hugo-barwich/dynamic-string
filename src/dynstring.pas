@@ -109,7 +109,16 @@ begin
   if istringlength > Self.ilength then
   begin
     ifllcnt := istringlength - Self.ilength;
+
+    //Fill the Data with White Space Character " "
+    FillByte(Self.pcposition^, ifllcnt, 32);
   end;
+
+  Self.pcposition := Self.pcstart + istringlength;
+
+  Self.pcposition^ := chr(0);
+
+  Self.ilength := Self.pcposition - Self.pcstart;
 end;
 
 procedure TDynString.SetDataCapacity(idatacapacity: Cardinal);
